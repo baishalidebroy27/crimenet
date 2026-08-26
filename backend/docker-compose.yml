@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:5.20
+    container_name: crimenet_neo4j
+    ports:
+      - "7474:7474" # HTTP
+      - "7687:7687" # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/StrongPassword123
+      - NEO4J_PLUGINS=["graph-data-science"]
+    volumes:
+      - neo4j_data:/data
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:6.0
+    container_name: crimenet_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2
+    container_name: crimenet_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  backend:
+    build: .
+    container_name: crimenet_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app/app
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+    depends_on:
+      - neo4j
+      - mongodb
+      - redis
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  celery_worker:
+    build: .
+    container_name: crimenet_celery_worker
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app/app
+      - ./data:/app/data
+    depends_on:
+      - redis
+      - mongodb
+      - neo4j
+    command: celery -A app.tasks.celery_tasks.celery_app worker --loglevel=info
+    restart: unless-stopped
+
+volumes:
+  neo4j_data:
+  mongodb_data:
+  redis_data:

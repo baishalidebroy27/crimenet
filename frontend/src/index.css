@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Montserrat:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Saffron to Green Gradient */
+.bg-patriotic-gradient {
+  background: linear-gradient(180deg, rgba(255,153,51,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(19,136,8,0.2) 100%);
+}
+
+.graph-container {
+  background-color: #0a0a0a;
+  position: relative;
+  overflow: hidden;
+}
+
+.graph-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(0, 255, 65, 0.1);
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(500px); }
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 20px #FF0040; }
+  50% { box-shadow: 0 0 40px #FF0040; }
+}
+
+.animate-pulse-red {
+  animation: pulse-red 2s infinite;
+}
