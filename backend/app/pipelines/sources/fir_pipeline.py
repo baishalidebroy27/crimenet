@@ -53,13 +53,34 @@ class FIRPipeline(BasePipeline):
             
         doc = nlp(processed_data)
         
+        # Heuristic extraction for specific attributes globally in the text
+        dob_match = re.search(r'(?:DOB|Date of Birth)\s*[:\-]?\s*([0-9/.-]+|[A-Za-z\s]+)', processed_data, re.IGNORECASE)
+        nationality_match = re.search(r'Nationality\s*[:\-]?\s*([A-Za-z]+)', processed_data, re.IGNORECASE)
+        last_seen_match = re.search(r'Last Seen\s*[:\-]?\s*([0-9A-Za-z\s]+)', processed_data, re.IGNORECASE)
+        
+        dob = dob_match.group(1).strip() if dob_match else None
+        nationality = nationality_match.group(1).strip() if nationality_match else None
+        last_seen = last_seen_match.group(1).strip() if last_seen_match else None
+        
+        # Identify who these profile details actually belong to
+        profile_name_match = re.search(r'Name\s*[:\-]?\s*([A-Za-z\s]+)', processed_data, re.IGNORECASE)
+        profile_name = profile_name_match.group(1).strip().lower() if profile_name_match else None
+        
+        assigned_profile = False
         for ent in doc.ents:
             if ent.label_ in ["PERSON", "ORG", "GPE", "DATE"]:
                 entity_type = ent.label_
+                
+                # Filter out obvious misclassifications by spaCy
+                if re.search(r'DOB|Nationality|Last Seen|Name:|Profile', ent.text, re.IGNORECASE):
+                    continue
+                if re.search(r'\+91|\d{10}', ent.text):
+                    continue
+                    
                 if entity_type == "GPE":
                     entity_type = "LOCATION"
                     
-                entities.append({
+                entity = {
                     "entity_id": f"TEMP_{uuid.uuid4().hex[:8]}",
                     "type": entity_type,
                     "name": ent.text,
@@ -71,7 +92,24 @@ class FIRPipeline(BasePipeline):
                         "extracted_text": ent.text,
                         "extracted_at": datetime.utcnow()
                     }]
-                })
+                }
+                
+                if entity_type == "PERSON":
+                    # Only attach the global DOB/Nationality to the person whose profile it is
+                    # If profile name not found, attach to the first person encountered
+                    should_assign = False
+                    if profile_name and (ent.text.lower() in profile_name or profile_name in ent.text.lower()):
+                        should_assign = True
+                    elif not profile_name and not assigned_profile:
+                        should_assign = True
+                        
+                    if should_assign:
+                        if dob: entity["dob"] = dob
+                        if nationality: entity["nationality"] = nationality
+                        if last_seen: entity["last_seen"] = last_seen
+                        assigned_profile = True
+                    
+                entities.append(entity)
                 
         phone_pattern = r'(\+91[\-\s]?)?[6-9]\d{9}'
         for match in re.finditer(phone_pattern, processed_data):
@@ -94,21 +132,98 @@ class FIRPipeline(BasePipeline):
                 }]
             })
             
-        # Create ASSOCIATED_WITH relationships between all entities found in this FIR
+        # Find the main suspect to center the relationships
+        main_suspect_name = None
+        for ent in entities:
+            if ent.get("type") == "PERSON":
+                if profile_name and (ent.get("normalized_name", "") in profile_name or profile_name in ent.get("normalized_name", "")):
+                    main_suspect_name = ent["name"]
+                    break
+        if not main_suspect_name:
+            for ent in entities:
+                if ent.get("type") == "PERSON":
+                    main_suspect_name = ent["name"]
+                    break
+
         self.relationships = getattr(self, 'relationships', [])
-        for i in range(len(entities)):
-            for j in range(i+1, len(entities)):
-                if entities[i]['name'] != entities[j]['name']:
+        
+        if main_suspect_name:
+            # First, find localized links for phones to secondary suspects
+            phone_owners = {}
+            for phone_ent in [e for e in entities if e["type"] == "PHONE"]:
+                phone_text = phone_ent["sources"][0]["extracted_text"]
+                for match in re.finditer(re.escape(phone_text), processed_data):
+                    start = max(0, match.start() - 60)
+                    end = min(len(processed_data), match.end() + 60)
+                    context = processed_data[start:end].lower()
+                    
+                    for person_ent in [e for e in entities if e["type"] == "PERSON"]:
+                        if person_ent["name"] != main_suspect_name and person_ent["name"].lower() in context:
+                            if phone_ent["name"] not in phone_owners:
+                                phone_owners[phone_ent["name"]] = set()
+                            phone_owners[phone_ent["name"]].add(person_ent["name"])
+
+            # Link all entities to the main suspect, EXCEPT phones that belong to secondary suspects
+            for ent in entities:
+                if ent["name"] != main_suspect_name:
+                    if ent["type"] == "PHONE" and ent["name"] in phone_owners:
+                        # Skip linking this phone to the main suspect
+                        pass
+                    else:
+                        self.relationships.append({
+                            "relationship_id": f"R_{uuid.uuid4().hex[:8]}",
+                            "type": "ASSOCIATED_WITH",
+                            "source_name": main_suspect_name,
+                            "target_name": ent["name"],
+                            "weight": 0.5,
+                            "metadata": {"source": "FIR_CO_OCCURRENCE"},
+                            "source_upload_id": self.upload_id,
+                            "created_at": datetime.utcnow()
+                        })
+            
+            # Additionally, link all secondary PERSON entities to each other
+            person_names = [e["name"] for e in entities if e["type"] == "PERSON" and e["name"] != main_suspect_name]
+            for i in range(len(person_names)):
+                for j in range(i+1, len(person_names)):
                     self.relationships.append({
                         "relationship_id": f"R_{uuid.uuid4().hex[:8]}",
                         "type": "ASSOCIATED_WITH",
-                        "source_name": entities[i]['name'],
-                        "target_name": entities[j]['name'],
+                        "source_name": person_names[i],
+                        "target_name": person_names[j],
                         "weight": 0.5,
                         "metadata": {"source": "FIR_CO_OCCURRENCE"},
                         "source_upload_id": self.upload_id,
                         "created_at": datetime.utcnow()
                     })
+
+            # Add the localized contextual links for phones
+            for phone_name, owners in phone_owners.items():
+                for owner in owners:
+                    self.relationships.append({
+                        "relationship_id": f"R_{uuid.uuid4().hex[:8]}",
+                        "type": "ASSOCIATED_WITH",
+                        "source_name": owner,
+                        "target_name": phone_name,
+                        "weight": 0.8,
+                        "metadata": {"source": "FIR_CONTEXT"},
+                        "source_upload_id": self.upload_id,
+                        "created_at": datetime.utcnow()
+                    })
+        else:
+            # Fallback to fully connected graph if no person is found
+            for i in range(len(entities)):
+                for j in range(i+1, len(entities)):
+                    if entities[i]['name'] != entities[j]['name']:
+                        self.relationships.append({
+                            "relationship_id": f"R_{uuid.uuid4().hex[:8]}",
+                            "type": "ASSOCIATED_WITH",
+                            "source_name": entities[i]['name'],
+                            "target_name": entities[j]['name'],
+                            "weight": 0.5,
+                            "metadata": {"source": "FIR_CO_OCCURRENCE"},
+                            "source_upload_id": self.upload_id,
+                            "created_at": datetime.utcnow()
+                        })
             
         return entities
 

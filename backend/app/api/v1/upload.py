@@ -5,8 +5,8 @@ from datetime import datetime
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from app.models.schemas import UploadResponse
 from app.config import settings
-
-# Force reload
+from app.db.mongodb_client import mongodb_client
+from app.db.neo4j_client import neo4j_client
 
 router = APIRouter()
 
@@ -32,16 +32,22 @@ async def upload_fir(file: UploadFile = File(...), case_number: str = Form(None)
     
     upload_id = await save_upload_file(file, "fir", ext)
     
+    metadata = {
+        "upload_id": upload_id, 
+        "filename": file.filename, 
+        "file_size_bytes": file.size or 0, 
+        "file_type": "fir", 
+        "uploaded_at": datetime.utcnow().isoformat(), 
+        "status": "uploaded",
+        "case_number": case_number
+    }
+    
+    if mongodb_client.db is not None:
+        await mongodb_client.db.uploads.insert_one(metadata.copy())
+    
     return {
         "success": True, 
-        "data": {
-            "upload_id": upload_id, 
-            "filename": file.filename, 
-            "file_size_bytes": file.size or 0, 
-            "file_type": "fir", 
-            "uploaded_at": datetime.utcnow().isoformat(), 
-            "status": "uploaded"
-        }
+        "data": metadata
     }
 
 @router.post("/upload/cdr", response_model=UploadResponse, status_code=201)
@@ -52,19 +58,54 @@ async def upload_cdr(file: UploadFile = File(...)):
         
     upload_id = await save_upload_file(file, "cdr", ext)
     
+    metadata = {
+        "upload_id": upload_id, 
+        "filename": file.filename, 
+        "file_size_bytes": file.size or 0, 
+        "file_type": "cdr", 
+        "uploaded_at": datetime.utcnow().isoformat(), 
+        "status": "uploaded"
+    }
+    
+    if mongodb_client.db is not None:
+        await mongodb_client.db.uploads.insert_one(metadata.copy())
+    
     return {
         "success": True, 
-        "data": {
-            "upload_id": upload_id, 
-            "filename": file.filename, 
-            "file_size_bytes": file.size or 0, 
-            "file_type": "cdr", 
-            "uploaded_at": datetime.utcnow().isoformat(), 
-            "status": "uploaded"
-        }
+        "data": metadata
     }
+
+@router.get("/uploads")
+async def get_uploads():
+    if mongodb_client.db is None:
+        return {"success": False, "data": []}
+    
+    cursor = mongodb_client.db.uploads.find({}).sort("uploaded_at", -1)
+    uploads = await cursor.to_list(length=100)
+    
+    # Convert ObjectId to string for JSON serialization
+    for upload in uploads:
+        upload["_id"] = str(upload["_id"])
+        
+    return {"success": True, "data": uploads}
 
 @router.delete("/upload/{upload_id}", status_code=204)
 async def delete_upload(upload_id: str):
-    pass
-
+    if mongodb_client.db is not None:
+        # Delete from uploads
+        await mongodb_client.db.uploads.delete_one({"upload_id": upload_id})
+        
+        # Delete entities and relationships from MongoDB
+        await mongodb_client.db.entities.delete_many({"sources.source_id": upload_id})
+        await mongodb_client.db.relationships.delete_many({"source_upload_id": upload_id})
+        
+    # Delete associated nodes and edges from Neo4j
+    driver = neo4j_client.get_driver()
+    if driver is not None:
+        with driver.session() as session:
+            # Delete relationships originating from this upload
+            session.run("MATCH ()-[r]-() WHERE r.source_upload_id = $upload_id DELETE r", upload_id=upload_id)
+            # Delete nodes originating from this upload
+            session.run("MATCH (n) WHERE $upload_id IN n.sources DETACH DELETE n", upload_id=upload_id)
+            
+    return {"success": True}

@@ -48,10 +48,14 @@ function EntityInspector({ node, allNodes, allEdges, onClose }) {
 
         {/* Details */}
         <div className="text-gray-400 text-xs flex flex-col gap-3">
-          <div className="flex justify-between border-b border-gray-800 pb-2"><span>DOB</span> <span className="text-gray-200">{node.dob || 'N/A'}</span></div>
-          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Nationality</span> <span className="text-gray-200">{node.nationality || 'Unknown'}</span></div>
-          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Last Seen</span> <span className="text-gray-200">{node.last_seen || node.location || 'Unknown'}</span></div>
-          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Known Associates</span> <span className="text-gray-200">{connectedNodes.filter(n => n.type === 'person' || n.type === 'Person').length}</span></div>
+          {(node.type === 'PERSON' || node.type === 'person') && (
+            <>
+              <div className="flex justify-between border-b border-gray-800 pb-2"><span>DOB</span> <span className="text-gray-200">{node.dob || 'N/A'}</span></div>
+              <div className="flex justify-between border-b border-gray-800 pb-2"><span>Nationality</span> <span className="text-gray-200">{node.nationality || 'Unknown'}</span></div>
+              <div className="flex justify-between border-b border-gray-800 pb-2"><span>Last Seen</span> <span className="text-gray-200">{node.last_seen || node.location || 'Unknown'}</span></div>
+            </>
+          )}
+          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Known Associates</span> <span className="text-gray-200">{connectedNodes.filter(n => n.type === 'person' || n.type === 'Person' || n.type === 'PERSON').length}</span></div>
           <div className="flex justify-between"><span>Open FIRs</span> <span className="text-gray-200">{node.open_firs || node.firs?.length || 0}</span></div>
         </div>
 
@@ -147,6 +151,7 @@ function Sidebar() {
 
 function Dashboard() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [stats, setStats] = useState({ total_nodes: 0, communities: 0, high_risk: 0 });
@@ -154,20 +159,23 @@ function Dashboard() {
   const [processing, setProcessing] = useState(false);
   const [selectedNode, setSelectedNode] = useState(null);
 
+  const handleClearView = () => {
+    setNodes([]);
+    setEdges([]);
+    setStats({ total_nodes: 0, communities: 0, high_risk: 0 });
+    setSelectedNode(null);
+    // Clear the active upload from window history so it doesn't auto-reload on re-mount
+    window.history.replaceState({}, document.title);
+    sessionStorage.setItem('viewCleared', 'true');
+  };
+
   const handleRunAnalysis = async () => {
     setProcessing(true);
+    sessionStorage.removeItem('viewCleared');
     try {
       await processUploads();
-      // Re-fetch graph data after analysis completes
-      const data = await getNetworkGraph();
-      setNodes(data.nodes || []);
-      setEdges(data.edges || []);
-      const highRiskCount = (data.nodes || []).filter(n => (n.risk_score || 0) > 75).length;
-      setStats({
-        total_nodes: data.stats?.total_nodes || (data.nodes || []).length,
-        communities: data.stats?.communities || 0,
-        high_risk: highRiskCount
-      });
+      // Redirect directly to the analytics route after processing
+      navigate('/analytics');
     } catch (error) {
       console.error("Failed to run analysis:", error);
     } finally {
@@ -177,8 +185,13 @@ function Dashboard() {
 
   useEffect(() => {
     const fetchGraphData = async () => {
+      if (sessionStorage.getItem('viewCleared') === 'true') {
+        setLoading(false);
+        return;
+      }
       try {
-        const data = await getNetworkGraph();
+        const uploadIds = location.state?.activeUploadIds || [];
+        const data = await getNetworkGraph(uploadIds);
         setNodes(data.nodes || []);
         setEdges(data.edges || []);
         
@@ -207,20 +220,28 @@ function Dashboard() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-navyBlue font-montserrat">Network Intelligence</h2>
-        <button 
-          onClick={handleRunAnalysis}
-          disabled={processing}
-          className="bg-indiaGreen hover:bg-[#0f6606] text-white px-4 py-2 rounded-md font-bold shadow transition-all flex items-center gap-2 disabled:opacity-50"
-        >
-          {processing ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Analyzing...</span>
-            </>
-          ) : (
-            <span>Run Analysis</span>
-          )}
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleClearView}
+            className="bg-white border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 px-4 py-2 rounded-md font-bold shadow-sm transition-all flex items-center gap-2"
+          >
+            Clear View
+          </button>
+          <button 
+            onClick={handleRunAnalysis}
+            disabled={processing}
+            className="bg-indiaGreen hover:bg-[#0f6606] text-white px-4 py-2 rounded-md font-bold shadow transition-all flex items-center gap-2 disabled:opacity-50"
+          >
+            {processing ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Analyzing...</span>
+              </>
+            ) : (
+              <span>Run Analysis</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Stats Row */}

@@ -5,19 +5,28 @@ from app.db.neo4j_client import neo4j_client
 router = APIRouter()
 
 @router.get("/graph", response_model=GraphResponse)
-async def get_graph(risk_threshold: int = 0, source_type: str = None, limit: int = 100):
+async def get_graph(risk_threshold: int = 0, upload_ids: str = None, limit: int = 100):
     driver = neo4j_client.get_driver()
     nodes = []
     edges = []
+    
+    upload_ids_list = upload_ids.split(",") if upload_ids else []
     
     with driver.session() as session:
         node_query = """
         MATCH (n)
         WHERE coalesce(n.risk_score, 0) >= $risk_threshold
-        RETURN id(n) as id, labels(n)[0] as type, coalesce(n.name, n.label, "Entity") as label, coalesce(n.risk_score, 0) as risk_score
+        """
+        
+        if upload_ids_list:
+            node_query += " AND any(src IN n.sources WHERE src IN $upload_ids_list) "
+            
+        node_query += """
+        RETURN id(n) as id, labels(n)[0] as type, coalesce(n.name, n.label, "Entity") as label, coalesce(n.risk_score, 0) as risk_score, n.dob as dob, n.nationality as nationality, n.last_seen as last_seen
         LIMIT $limit
         """
-        node_results = session.run(node_query, risk_threshold=risk_threshold, limit=limit)
+        
+        node_results = session.run(node_query, risk_threshold=risk_threshold, limit=limit, upload_ids_list=upload_ids_list)
         
         node_ids = []
         for record in node_results:
@@ -27,7 +36,10 @@ async def get_graph(risk_threshold: int = 0, source_type: str = None, limit: int
                 id=str(node_id_int),
                 label=str(record["label"]),
                 type=str(record["type"]),
-                risk_score=record["risk_score"]
+                risk_score=record["risk_score"],
+                dob=record["dob"],
+                nationality=record["nationality"],
+                last_seen=record["last_seen"]
             ))
             
         if node_ids:

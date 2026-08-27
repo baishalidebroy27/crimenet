@@ -68,6 +68,14 @@ api_router.include_router(admin.router, tags=["admin"])
 
 app.include_router(api_router, prefix="/api/v1")
 
+@app.get("/")
+async def root():
+    return {
+        "message": "CrimeNet API is running",
+        "docs": "/docs",
+        "health": "/api/v1/health"
+    }
+
 @app.get("/api/v1/health")
 async def health_check():
     return {

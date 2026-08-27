@@ -32,8 +32,12 @@ export const processUploads = async (uploadIds = ["mock_1"]) => {
   return response.data;
 };
 
-export const getNetworkGraph = async () => {
-  const response = await axios.get(`${API_URL}/graph`);
+export const getNetworkGraph = async (uploadIds = []) => {
+  const params = {};
+  if (uploadIds && uploadIds.length > 0) {
+    params.upload_ids = uploadIds.join(',');
+  }
+  const response = await axios.get(`${API_URL}/graph`, { params });
   return response.data;
 };
 
@@ -49,5 +53,15 @@ export const runAnalytics = async () => {
 
 export const clearDatabase = async () => {
   const response = await axios.post(`${API_URL}/clear`);
+  return response.data;
+};
+
+export const getUploads = async () => {
+  const response = await axios.get(`${API_URL}/uploads`);
+  return response.data;
+};
+
+export const deleteUpload = async (uploadId) => {
+  const response = await axios.delete(`${API_URL}/upload/${uploadId}`);
   return response.data;
 };

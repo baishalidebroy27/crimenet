@@ -81,9 +81,12 @@ export default function Upload() {
     setStatus('processing');
     try {
       await processUploads(uploadIds);
+      // Clear any previous 'viewCleared' state so the new graph displays!
+      sessionStorage.removeItem('viewCleared');
+      
       // Navigate directly to dashboard to see the graph
       setTimeout(() => {
-          navigate('/');
+          navigate('/', { state: { activeUploadIds: uploadIds } });
       }, 1500);
     } catch (err) {
       console.error(err);

@@ -1,5 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import cytoscape from 'cytoscape';
+const personIcon = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g transform="translate(32, 0)"><path fill="#ffffff" d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z"/></g></svg>');
+const locationIcon = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g transform="translate(64, 0)"><path fill="#ffffff" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/></g></svg>');
+const phoneIcon = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#ffffff" d="M493.4 24.6l-104-24c-11.3-2.6-22.9 3.3-27.5 13.9l-48 112c-4.2 9.8-1.4 21.3 6.9 28l60.6 49.6c-36 76.7-98.9 140.5-177.2 177.2l-49.6-60.6c-6.8-8.3-18.2-11.1-28-6.9l-112 48C3.9 366.5-2 378.1.6 389.4l24 104C27.1 504.2 36.7 512 48 512c256.1 0 464-207.5 464-464 0-11.2-7.7-20.9-18.6-23.4z"/></svg>');
+const dateIcon = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g transform="translate(32, 0)"><path fill="#ffffff" d="M400 64h-48V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H160V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H48C21.5 64 0 85.5 0 112v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48zm-6 400H54c-3.3 0-6-2.7-6-6V160h352v298c0 3.3-2.7 6-6 6z"/></g></svg>');
+const orgIcon = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#ffffff" d="M496 128v16a8 8 0 0 1-8 8h-24v12c0 6.6-5.4 12-12 12H60c-6.6 0-12-5.4-12-12v-12H24a8 8 0 0 1-8-8v-16a8 8 0 0 1 4.7-7.3l236-112a8 8 0 0 1 6.6 0l236 112a8 8 0 0 1 4.7 7.3zm-32 64v214c0 3.3-2.7 6-6 6H54c-3.3 0-6-2.7-6-6V192h416zm-40 256v22a10 10 0 0 1-10 10H66a10 10 0 0 1-10-10v-22a10 10 0 0 1 10-10h348a10 10 0 0 1 10 10zM128 224v128c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V224c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16zm96 0v128c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16V224c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16zm96 0v128c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16V224c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16zm96 0v128c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16V224c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16z"/></svg>');
 
 export default function NetworkGraph({ nodes, edges, onNodeClick, selectedNodeId }) {
   const containerRef = useRef(null);
@@ -74,7 +79,10 @@ export default function NetworkGraph({ nodes, edges, onNodeClick, selectedNodeId
           name: n.label,
           risk: n.risk_score || 0,
           type: n.type,
-          degree: degreeMap[n.id] || 0
+          degree: degreeMap[n.id] || 0,
+          dob: n.dob,
+          nationality: n.nationality,
+          last_seen: n.last_seen
         },
         position: posMap[n.id] || { x: 0, y: 0 }
       })),
@@ -114,32 +122,49 @@ export default function NetworkGraph({ nodes, edges, onNodeClick, selectedNodeId
             'text-valign': 'bottom',
             'text-margin-y': 8,
             'font-family': 'sans-serif',
-            'font-size': '10px',
-            'width': 'mapData(degree, 0, 15, 10, 80)',
-            'height': 'mapData(degree, 0, 15, 10, 80)',
+            'font-size': '12px',
+            'width': 'mapData(degree, 0, 15, 35, 100)',
+            'height': 'mapData(degree, 0, 15, 35, 100)',
             'transition-property': 'border-color, shadow-color',
-            'transition-duration': '0.3s'
+            'transition-duration': '0.3s',
+            'background-width': '65%',
+            'background-height': '65%'
           }
         },
         {
           selector: 'node[type = "LOCATION"]',
           style: {
             'border-color': '#B200FF',
-            'shadow-color': '#B200FF'
+            'shadow-color': '#B200FF',
+            'background-image': locationIcon
           }
         },
         {
           selector: 'node[type = "PHONE"]',
           style: {
             'border-color': '#00E5FF',
-            'shadow-color': '#00E5FF'
+            'shadow-color': '#00E5FF',
+            'background-image': phoneIcon
           }
         },
         {
           selector: 'node[type = "PERSON"]',
           style: {
             'border-color': '#FF8C00',
-            'shadow-color': '#FF8C00'
+            'shadow-color': '#FF8C00',
+            'background-image': personIcon
+          }
+        },
+        {
+          selector: 'node[type = "DATE"]',
+          style: {
+            'background-image': dateIcon
+          }
+        },
+        {
+          selector: 'node[type = "ORG"]',
+          style: {
+            'background-image': orgIcon
           }
         },
         {
@@ -159,9 +184,9 @@ export default function NetworkGraph({ nodes, edges, onNodeClick, selectedNodeId
         {
           selector: 'node[degree = 0]',
           style: {
-            'width': 20,
-            'height': 20,
-            'font-size': '8px',
+            'width': 35,
+            'height': 35,
+            'font-size': '10px',
             'border-width': 2
           }
         },

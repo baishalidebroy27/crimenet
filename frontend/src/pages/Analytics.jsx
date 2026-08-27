@@ -9,8 +9,18 @@ export default function Analytics() {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
 
+  const handleClearView = () => {
+    setNodes([]);
+    setEdges([]);
+    sessionStorage.setItem('viewCleared', 'true');
+  };
+
   useEffect(() => {
     const fetchData = async () => {
+      if (sessionStorage.getItem('viewCleared') === 'true') {
+        setLoading(false);
+        return;
+      }
       try {
         const data = await getNetworkGraph();
         setNodes(data.nodes || []);
@@ -34,12 +44,20 @@ export default function Analytics() {
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto font-montserrat">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-navyBlue flex items-center gap-3">
-          <ChartLine size={32} weight="duotone" className="text-saffron" />
-          Neural Analytics
-        </h1>
-        <p className="text-gray-500 mt-2">Deep learning insights, graph algorithms, and pattern recognition metrics.</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-navyBlue flex items-center gap-3">
+            <ChartLine size={32} weight="duotone" className="text-saffron" />
+            Neural Analytics
+          </h1>
+          <p className="text-gray-500 mt-2">Deep learning insights, graph algorithms, and pattern recognition metrics.</p>
+        </div>
+        <button 
+          onClick={handleClearView}
+          className="bg-white border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 px-4 py-2 rounded-md font-bold shadow-sm transition-all flex items-center gap-2"
+        >
+          Clear View
+        </button>
       </div>
 
       {loading ? (
@@ -90,41 +108,8 @@ export default function Analytics() {
              </div>
           </div>
 
-          {/* Main Chart Area Placeholder */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-navyBlue">Network Growth Over Time</h3>
-              <select className="bg-gray-50 border border-gray-200 text-sm rounded-md px-3 py-1 outline-none text-gray-600">
-                <option>Last 30 Days</option>
-                <option>Last 6 Months</option>
-                <option>All Time</option>
-              </select>
-            </div>
-            
-            {/* Dynamic Graph representation */}
-            <div className="h-64 flex items-end justify-between gap-2 mt-4 px-2">
-              {[...Array(12)].map((_, i) => {
-                // If we have nodes, distribute them pseudo-randomly over the bars to simulate growth, otherwise empty
-                const val = nodes.length > 0 ? Math.floor(nodes.length * (0.1 + (i * 0.08))) : 0;
-                return (
-                  <div key={i} className="w-full bg-gray-100 rounded-t-sm relative group cursor-pointer flex items-end" style={{height: '100%'}}>
-                    <div className="w-full bg-navyBlue rounded-t-sm transition-all group-hover:bg-indiaGreen" style={{height: `${Math.min(100, val > 0 ? (val / nodes.length) * 100 + 10 : 0)}%`}}></div>
-                    {val > 0 && (
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                        {val} nodes
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-            <div className="flex justify-between mt-2 text-xs text-gray-400 font-bold px-2">
-              <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-            </div>
-          </div>
-
           {/* Top Suspects List */}
-          <div className="bg-gradient-to-b from-navyBlue to-[#0a0a2a] rounded-xl shadow-lg border border-gray-800 p-6 text-white relative overflow-hidden">
+          <div className="lg:col-span-3 bg-gradient-to-b from-navyBlue to-[#0a0a2a] rounded-xl shadow-lg border border-gray-800 p-6 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <Lightning size={120} />
             </div>
@@ -132,25 +117,25 @@ export default function Analytics() {
               <Target size={20} /> High-Value Targets
             </h3>
             
-            <div className="space-y-4 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
               {topSuspects.length > 0 ? topSuspects.map((target, idx) => (
-                <div key={idx} className="bg-white/5 border border-white/10 p-3 rounded-lg flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-black/50 border border-gray-600 flex items-center justify-center text-xs font-bold text-gray-300">
+                <div key={idx} className="bg-white/5 border border-white/10 p-4 rounded-lg flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-black/50 border border-gray-600 flex items-center justify-center text-sm font-bold text-gray-300">
                       #{idx + 1}
                     </div>
                     <div className="overflow-hidden">
-                      <p className="font-bold text-sm text-gray-100 truncate w-32" title={target.label}>{target.label}</p>
-                      <p className="text-[10px] text-neonCyan tracking-wider uppercase">{target.type}</p>
+                      <p className="font-bold text-base text-gray-100 truncate max-w-[180px]" title={target.label}>{target.label}</p>
+                      <p className="text-[10px] text-neonCyan tracking-wider uppercase mt-1">{target.type}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={`text-sm font-bold ${(target.risk_score || 0) > 90 ? 'text-neonRed' : (target.risk_score || 0) > 50 ? 'text-neonYellow' : 'text-neonGreen'}`}>{target.risk_score || 0}%</span>
-                    <p className="text-[9px] text-gray-400">RISK SCORE</p>
+                    <span className={`text-xl font-bold ${(target.risk_score || 0) > 90 ? 'text-neonRed' : (target.risk_score || 0) > 50 ? 'text-neonYellow' : 'text-neonGreen'}`}>{target.risk_score || 0}%</span>
+                    <p className="text-[10px] text-gray-400 tracking-wider">RISK</p>
                   </div>
                 </div>
               )) : (
-                <div className="text-gray-400 text-sm text-center py-10">
+                <div className="col-span-1 md:col-span-2 lg:col-span-3 text-gray-400 text-sm text-center py-10 border border-dashed border-gray-700 rounded-lg">
                   No targets identified yet. Upload data to populate.
                 </div>
               )}
@@ -158,7 +143,7 @@ export default function Analytics() {
             
             <button 
               onClick={() => navigate('/search')}
-              className="w-full mt-6 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold tracking-widest rounded transition-colors"
+              className="w-full mt-6 py-3 bg-white/10 hover:bg-white/20 text-white text-sm font-bold tracking-widest rounded transition-colors"
             >
               VIEW FULL DOSSIER
             </button>

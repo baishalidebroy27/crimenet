@@ -26,6 +26,7 @@ def process_upload_task(upload_ids: list, options: dict):
     from app.pipelines.sources.cdr_pipeline import CDRPipeline
     from app.pipelines.entity_resolver import EntityResolver
     from app.pipelines.graph_builder import GraphBuilder
+    from app.pipelines.blockchain_pipeline import BlockchainPipeline
     import asyncio
     
     async def _run_pipelines():
@@ -48,6 +49,12 @@ def process_upload_task(upload_ids: list, options: dict):
                     pipeline = CDRPipeline(upload_id)
                     
                 await pipeline.run(file_path)
+                
+                # Blockchain Verification
+                bc_pipeline = BlockchainPipeline(upload_id)
+                file_hash = await bc_pipeline.extract(file_path)
+                verification_data = await bc_pipeline.process(file_hash)
+                await bc_pipeline.store(verification_data)
                 
         resolver = EntityResolver()
         await resolver.resolve()

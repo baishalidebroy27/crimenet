@@ -82,6 +82,9 @@ class GraphNode(BaseModel):
     sources: List[str] = []
     metadata: Dict[str, Any] = {}
     position: Optional[Dict[str, int]] = None
+    dob: Optional[str] = None
+    nationality: Optional[str] = None
+    last_seen: Optional[str] = None
 
 class GraphEdge(BaseModel):
     id: str

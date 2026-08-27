@@ -35,16 +35,22 @@ class GraphBuilder:
                     n.type = '{entity_type}',
                     n.risk_score = {risk_score},
                     n.normalized_name = $normalized_name,
-                    n.sources = $sources
+                    n.sources = $sources,
+                    n.dob = coalesce($dob, n.dob),
+                    n.nationality = coalesce($nationality, n.nationality),
+                    n.last_seen = coalesce($last_seen, n.last_seen)
                 """
-                sources = [s.get("source_type") for s in entity.get("sources", [])]
+                sources = [s.get("source_id") for s in entity.get("sources", []) if s.get("source_id")]
                 
                 try:
                     session.run(query, 
                         id=entity["entity_id"], 
                         name=entity["name"],
                         normalized_name=entity["normalized_name"],
-                        sources=sources
+                        sources=sources,
+                        dob=entity.get("dob"),
+                        nationality=entity.get("nationality"),
+                        last_seen=entity.get("last_seen")
                     )
                 except Exception as e:
                     logger.error(f"Error creating node {entity['entity_id']}: {e}")
@@ -59,14 +65,15 @@ class GraphBuilder:
                 MATCH (a), (b)
                 WHERE a.name = $source_name AND b.name = $target_name
                 MERGE (a)-[r:{rel_type}]->(b)
-                SET r.weight = $weight, r.duration = $duration
+                SET r.weight = $weight, r.duration = $duration, r.source_upload_id = $source_upload_id
                 """
                 try:
                     session.run(query,
                         source_name=rel.get("source_name"),
                         target_name=rel.get("target_name"),
                         weight=rel.get("weight", 1.0),
-                        duration=rel.get("metadata", {}).get("duration", 0)
+                        duration=rel.get("metadata", {}).get("duration", 0),
+                        source_upload_id=rel.get("source_upload_id", "")
                     )
                 except Exception as e:
                     logger.error(f"Error creating relationship: {e}")
