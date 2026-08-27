@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlass, Fingerprint, Warning, Database, Lightning } from '@phosphor-icons/react';
 import { getNetworkGraph } from '../services/api';
 
 export default function Search() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [nodes, setNodes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -81,6 +83,7 @@ export default function Search() {
             {searchResults.length > 0 ? searchResults.map((result, idx) => (
               <div 
                 key={result.id || idx}
+                onClick={() => navigate('/', { state: { searchNodeId: result.id } })}
                 className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm hover:shadow-md hover:border-indiaGreen transition-all group cursor-pointer flex gap-4 items-start"
               >
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${

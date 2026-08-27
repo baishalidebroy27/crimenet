@@ -48,11 +48,11 @@ function EntityInspector({ node, allNodes, allEdges, onClose }) {
 
         {/* Details */}
         <div className="text-gray-400 text-xs flex flex-col gap-3">
-          <div className="flex justify-between border-b border-gray-800 pb-2"><span>DOB</span> <span className="text-gray-200">1979-03-14</span></div>
-          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Nationality</span> <span className="text-gray-200">Unknown</span></div>
-          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Last Seen</span> <span className="text-gray-200">Mumbai, 2026-08-18</span></div>
-          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Known Associates</span> <span className="text-gray-200">{connectedNodes.filter(n => n.type === 'person').length || 12}</span></div>
-          <div className="flex justify-between"><span>Open FIRs</span> <span className="text-gray-200">4</span></div>
+          <div className="flex justify-between border-b border-gray-800 pb-2"><span>DOB</span> <span className="text-gray-200">{node.dob || 'N/A'}</span></div>
+          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Nationality</span> <span className="text-gray-200">{node.nationality || 'Unknown'}</span></div>
+          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Last Seen</span> <span className="text-gray-200">{node.last_seen || node.location || 'Unknown'}</span></div>
+          <div className="flex justify-between border-b border-gray-800 pb-2"><span>Known Associates</span> <span className="text-gray-200">{connectedNodes.filter(n => n.type === 'person' || n.type === 'Person').length}</span></div>
+          <div className="flex justify-between"><span>Open FIRs</span> <span className="text-gray-200">{node.open_firs || node.firs?.length || 0}</span></div>
         </div>
 
         {/* Connections List */}
@@ -90,7 +90,7 @@ function Header() {
     <header className="h-16 bg-saffron text-white flex items-center justify-between px-6 shadow-md z-10 relative">
       <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
         <Network size={28} weight="bold" />
-        <span className="font-montserrat font-bold text-xl tracking-wide">CrimeNet AI</span>
+        <span className="font-montserrat font-bold text-xl tracking-wide">NETRA</span>
       </div>
       <div className="flex items-center gap-4">
         <div className="relative cursor-pointer hover:opacity-80" onClick={() => navigate('/alerts')}>
@@ -146,6 +146,7 @@ function Sidebar() {
 }
 
 function Dashboard() {
+  const location = useLocation();
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [stats, setStats] = useState({ total_nodes: 0, communities: 0, high_risk: 0 });
@@ -181,6 +182,11 @@ function Dashboard() {
         setNodes(data.nodes || []);
         setEdges(data.edges || []);
         
+        if (location.state?.searchNodeId) {
+          const found = (data.nodes || []).find(n => String(n.id) === String(location.state.searchNodeId));
+          if (found) setSelectedNode(found);
+        }
+        
         // Calculate some simple stats from the data if stats object from backend is basic
         const highRiskCount = (data.nodes || []).filter(n => (n.risk_score || 0) > 75).length;
         setStats({
@@ -195,7 +201,7 @@ function Dashboard() {
       }
     };
     fetchGraphData();
-  }, []);
+  }, [location.state?.searchNodeId]);
 
   return (
     <div className="p-6">

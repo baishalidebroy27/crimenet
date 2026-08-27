@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldWarning, BellRinging, Eye, Siren, MapPin, Clock } from '@phosphor-icons/react';
+import { ShieldWarning, BellRinging, Eye, Siren, MapPin, Clock, Warning } from '@phosphor-icons/react';
 import { getNetworkGraph } from '../services/api';
 
 export default function Alerts() {
