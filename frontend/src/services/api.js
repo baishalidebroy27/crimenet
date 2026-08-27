@@ -2,6 +2,36 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:8000/api/v1';
 
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const loginAdmin = async (username, password) => {
+  const formData = new URLSearchParams();
+  formData.append('username', username);
+  formData.append('password', password);
+  
+  const response = await axios.post(`${API_URL}/auth/login`, formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+  return response.data;
+};
+
 export const uploadFir = async (file, caseNumber = '') => {
   const formData = new FormData();
   formData.append('file', file);

@@ -7,6 +7,8 @@ import Upload from './pages/Upload';
 import Analytics from './pages/Analytics';
 import Alerts from './pages/Alerts';
 import Search from './pages/Search';
+import Login from './pages/Login';
+import { SignOut } from '@phosphor-icons/react';
 
 function EntityInspector({ node, allNodes, allEdges, onClose }) {
   if (!node) return null;
@@ -88,8 +90,14 @@ function EntityInspector({ node, allNodes, allEdges, onClose }) {
   );
 }
 
-function Header() {
+function Header({ setIsAuthenticated }) {
   const navigate = useNavigate();
+  
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+  };
+
   return (
     <header className="h-16 bg-saffron text-white flex items-center justify-between px-6 shadow-md z-10 relative">
       <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
@@ -101,11 +109,14 @@ function Header() {
           <ShieldWarning size={24} />
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-neonRed rounded-full animate-pulse-red"></span>
         </div>
-        <UserCircle 
-          size={28} 
-          className="cursor-pointer hover:opacity-80" 
-          onClick={() => alert("Secure login portal and authentication flows are coming soon!")}
-        />
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-1 bg-black/20 hover:bg-black/40 px-3 py-1.5 rounded-md transition-colors"
+          title="Secure Logout"
+        >
+          <SignOut size={20} />
+          <span className="text-sm font-medium hidden md:inline">Disconnect</span>
+        </button>
       </div>
     </header>
   )
@@ -284,10 +295,10 @@ function Dashboard() {
   )
 }
 
-function MainLayout() {
+function MainLayout({ setIsAuthenticated }) {
   return (
     <div className="min-h-screen bg-[#f8fafc]">
-      <Header />
+      <Header setIsAuthenticated={setIsAuthenticated} />
       <Sidebar />
       <main className="md:ml-60 pt-2 min-h-[calc(100vh-64px)]">
         <Routes>
@@ -304,9 +315,15 @@ function MainLayout() {
 }
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
+
+  if (!isAuthenticated) {
+    return <Login setAuth={setIsAuthenticated} />
+  }
+
   return (
     <BrowserRouter>
-      <MainLayout />
+      <MainLayout setIsAuthenticated={setIsAuthenticated} />
     </BrowserRouter>
   )
 }

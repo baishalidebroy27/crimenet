@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Depends
 from fastapi.middleware.cors import CORSMiddleware 
 import logging
 import uvicorn
@@ -11,7 +11,8 @@ from app.config import settings
 from app.db.neo4j_client import neo4j_client
 from app.db.mongodb_client import mongodb_client
 from app.db.redis_client import redis_client
-from app.api.v1 import upload, process, graph, analytics, risk, search, admin
+from app.api.v1 import upload, process, graph, analytics, risk, search, admin, auth
+from app.api.v1.auth import get_current_user
 
 logging.basicConfig(level=getattr(logging, settings.log_level))
 logger = logging.getLogger(__name__)
@@ -58,13 +59,17 @@ async def shutdown_event():
     logger.info("API Connections closed")
 
 api_router = APIRouter()
-api_router.include_router(upload.router, tags=["upload"])
-api_router.include_router(process.router, tags=["process"])
-api_router.include_router(graph.router, tags=["graph"])
-api_router.include_router(analytics.router, tags=["analytics"])
-api_router.include_router(risk.router, tags=["risk"])
-api_router.include_router(search.router, tags=["search"])
-api_router.include_router(admin.router, tags=["admin"])
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+
+# Protected routes
+protected_dependencies = [Depends(get_current_user)]
+api_router.include_router(upload.router, tags=["upload"], dependencies=protected_dependencies)
+api_router.include_router(process.router, tags=["process"], dependencies=protected_dependencies)
+api_router.include_router(graph.router, tags=["graph"], dependencies=protected_dependencies)
+api_router.include_router(analytics.router, tags=["analytics"], dependencies=protected_dependencies)
+api_router.include_router(risk.router, tags=["risk"], dependencies=protected_dependencies)
+api_router.include_router(search.router, tags=["search"], dependencies=protected_dependencies)
+api_router.include_router(admin.router, tags=["admin"], dependencies=protected_dependencies)
 
 app.include_router(api_router, prefix="/api/v1")
 
