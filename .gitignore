@@ -19,3 +19,5 @@ __pycache__/
 # Data and logs
 backend/data/
 *.log
+*.zip
+backend/updated_env.txt
