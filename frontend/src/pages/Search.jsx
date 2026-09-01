@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlass, Fingerprint, Warning, Database, FileText, PhoneCall, Trash, CheckCircle, ShieldCheck } from '@phosphor-icons/react';
-import { getNetworkGraph, getUploads, deleteUpload } from '../services/api';
+import { getNetworkGraph, getUploads, deleteUpload, processUploads } from '../services/api';
 
 export default function Search() {
   const navigate = useNavigate();
@@ -42,6 +42,19 @@ export default function Search() {
         console.error("Failed to delete upload", err);
         alert("Failed to delete upload.");
       }
+    }
+  };
+
+  const handleProcessUpload = async (uploadId) => {
+    try {
+      alert("Processing started. This might take a moment...");
+      await processUploads([uploadId]);
+      alert("Processing complete! The intelligence graph has been updated with entities and risk scores from this file.");
+      sessionStorage.removeItem('viewCleared');
+      navigate('/');
+    } catch (err) {
+      console.error("Failed to process upload", err);
+      alert("Failed to process upload.");
     }
   };
 
@@ -208,6 +221,13 @@ export default function Search() {
                   </div>
                   
                   <div className="flex md:flex-col gap-2 shrink-0">
+                    <button 
+                      onClick={() => handleProcessUpload(upload.upload_id)}
+                      className="px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-md font-bold text-xs flex items-center gap-1 transition-colors"
+                      title="Process this upload into the intelligence graph"
+                    >
+                      <Database size={16} weight="bold" /> Process
+                    </button>
                     <button 
                       onClick={() => handleDeleteUpload(upload.upload_id)}
                       className="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-md font-bold text-xs flex items-center gap-1 transition-colors"
