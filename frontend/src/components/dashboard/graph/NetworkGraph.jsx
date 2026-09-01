@@ -33,7 +33,7 @@ export default function NetworkGraph({ nodes, edges, onNodeClick, selectedNodeId
       const risk = n.risk_score || 0;
       const type = n.type ? n.type.toUpperCase() : '';
       
-      if (risk >= 80) criticalNodes.push(n);
+      if (risk > 80) criticalNodes.push(n);
       else if (type === 'LOCATION') locationNodes.push(n);
       else if (risk >= 50) mediumNodes.push(n);
       else lowNodes.push(n);
@@ -168,14 +168,14 @@ export default function NetworkGraph({ nodes, edges, onNodeClick, selectedNodeId
           }
         },
         {
-          selector: 'node[risk >= 80]',
+          selector: 'node[risk > 80]',
           style: {
             'border-color': '#FF003C',
             'shadow-color': '#FF003C'
           }
         },
         {
-          selector: 'node[risk >= 50][risk < 80]',
+          selector: 'node[risk >= 50][risk <= 80]',
           style: {
             'border-color': '#FFE600',
             'shadow-color': '#FFE600'

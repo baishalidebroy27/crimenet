@@ -77,5 +77,40 @@ class GraphBuilder:
                     )
                 except Exception as e:
                     logger.error(f"Error creating relationship: {e}")
+                    
+            # Calculate dynamic risk score based on degree centrality (connections)
+            logger.info("Updating risk scores based on graph connectivity")
+            centrality_query = """
+            MATCH (n)
+            OPTIONAL MATCH (n)-[r]-()
+            WITH n, count(r) as degree
+            WITH n, degree, 
+                 CASE 
+                    WHEN n.type = 'PHONE' THEN 
+                        CASE 
+                            WHEN degree >= 4 THEN 95
+                            WHEN degree = 3 THEN 80
+                            WHEN degree = 2 THEN 65
+                            ELSE 50
+                        END
+                    WHEN n.type = 'PERSON' THEN
+                        CASE
+                            WHEN degree >= 3 THEN 95
+                            WHEN degree = 2 THEN 90
+                            ELSE 85
+                        END
+                    ELSE 
+                        CASE
+                            WHEN degree >= 3 THEN 60
+                            WHEN degree = 2 THEN 40
+                            ELSE 25
+                        END
+                 END as new_score
+            SET n.risk_score = new_score
+            """
+            try:
+                session.run(centrality_query)
+            except Exception as e:
+                logger.error(f"Error updating centrality risk scores: {e}")
         
         logger.info("Graph build complete.")
