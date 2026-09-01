@@ -29,9 +29,56 @@ class BlockchainPipeline(BasePipeline):
         return sha256_hash.hexdigest()
 
     async def process(self, file_hash: str):
-        logger.info(f"Simulating blockchain transaction for hash: {file_hash}")
-        # Mock transaction generation
-        tx_id = f"0x{uuid.uuid4().hex}{uuid.uuid4().hex}"
+        logger.info(f"Attempting blockchain transaction for hash: {file_hash}")
+        
+        # Load Web3 config
+        import os
+        rpc_url = os.environ.get("WEB3_RPC_URL", "").strip()
+        private_key = os.environ.get("WEB3_PRIVATE_KEY", "").strip()
+        
+        tx_id = None
+        
+        if rpc_url and private_key:
+            try:
+                from web3 import Web3
+                from web3.middleware import geth_poa_middleware
+                
+                w3 = Web3(Web3.HTTPProvider(rpc_url))
+                w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+                
+                if w3.is_connected():
+                    account = w3.eth.account.from_key(private_key)
+                    # Convert file_hash to hex bytes for data payload
+                    data_payload = file_hash.encode('utf-8').hex()
+                    
+                    tx = {
+                        'nonce': w3.eth.get_transaction_count(account.address),
+                        'to': account.address, # Send to self
+                        'value': 0,
+                        'gas': 200000,
+                        'gasPrice': w3.eth.gas_price,
+                        'data': '0x' + data_payload,
+                        'chainId': w3.eth.chain_id
+                    }
+                    
+                    signed_tx = w3.eth.account.sign_transaction(tx, private_key)
+                    
+                    try:
+                        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+                    except AttributeError:
+                        tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+                        
+                    tx_id = w3.to_hex(tx_hash)
+                    logger.info(f"Successfully sent transaction: {tx_id}")
+                else:
+                    logger.warning("Web3 could not connect to RPC URL. Falling back...")
+            except Exception as e:
+                logger.error(f"Error executing real blockchain transaction: {e}")
+        
+        if not tx_id:
+            logger.info("Falling back to simulated blockchain transaction.")
+            tx_id = f"0x{uuid.uuid4().hex}{uuid.uuid4().hex}"
+
         return {
             "hash": file_hash,
             "blockchain_tx_id": tx_id,

@@ -1,0 +1,23 @@
+FIR No: 1026/2026
+Date: 31 August 2026
+
+--------------------------------------------------
+SUBJECT: INVESTIGATION REPORT - ILLEGAL ARMS RING
+
+INCIDENT DETAILS:
+Intelligence suggests a coordinated illegal arms smuggling operation functioning in Delhi. The operation is led by Vikram Singh, who has been observed at the abandoned warehouse in Okhla. 
+
+Vikram Singh regularly communicates with Amit Sharma, who acts as the primary distributor. Amit Sharma was recently seen meeting with members of the Shadow Cartel. 
+
+Call records also show Amit Sharma is in frequent contact with a supplier named Rohit Patel (Phone: +91-9876543210).
+
+PROFILE DETAILS:
+- Name: Vikram Singh
+- DOB: 12/04/1985
+- Nationality: Indian
+- Last Seen: 29 August 2026
+
+- Name: Amit Sharma
+- DOB: 02/09/1988
+- Nationality: Indian
+- Last Seen: 30 August 2026

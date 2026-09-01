@@ -58,11 +58,34 @@ async def get_graph(risk_threshold: int = 0, upload_ids: str = None, limit: int 
                     weight=float(record["weight"])
                 ))
                 
+    # Calculate connected components (communities) using a simple undirected graph DFS
+    adj = {node.id: [] for node in nodes}
+    for edge in edges:
+        if edge.source in adj and edge.target in adj:
+            adj[edge.source].append(edge.target)
+            adj[edge.target].append(edge.source)
+            
+    visited = set()
+    num_communities = 0
+    for node_id in adj:
+        if node_id not in visited:
+            num_communities += 1
+            # DFS
+            stack = [node_id]
+            while stack:
+                curr = stack.pop()
+                if curr not in visited:
+                    visited.add(curr)
+                    for neighbor in adj.get(curr, []):
+                        if neighbor not in visited:
+                            stack.append(neighbor)
+
     stats = GraphResponseStats(
         total_nodes=len(nodes),
         total_edges=len(edges),
         nodes_returned=len(nodes),
-        edges_returned=len(edges)
+        edges_returned=len(edges),
+        communities=num_communities
     )
     
     return GraphResponse(nodes=nodes, edges=edges, stats=stats)
