@@ -11,9 +11,9 @@ from app.db.mongodb_client import mongodb_client
 logger = logging.getLogger(__name__)
 
 try:
-    nlp = spacy.load("en_core_web_sm")
+    nlp = spacy.load("en_core_web_lg")
 except OSError:
-    logger.warning("Spacy model 'en_core_web_sm' not found. Run python -m spacy download en_core_web_sm")
+    logger.warning("Spacy model 'en_core_web_lg' not found. Run python -m spacy download en_core_web_lg")
     nlp = None
 
 class FIRPipeline(BasePipeline):
