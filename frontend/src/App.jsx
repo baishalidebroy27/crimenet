@@ -24,7 +24,7 @@ function EntityInspector({ node, allNodes, allEdges, onClose }) {
   }).filter(n => n !== undefined);
 
   const nodeRisk = node.risk || node.risk_score || 0;
-  const riskColor = nodeRisk > 75 ? 'text-neonRed border-neonRed' : nodeRisk > 50 ? 'text-neonYellow border-neonYellow' : 'text-neonGreen border-neonGreen';
+  const riskColor = nodeRisk >= 90 ? 'text-neonRed border-neonRed' : nodeRisk >= 80 ? 'text-neonYellow border-neonYellow' : 'text-neonGreen border-neonGreen';
 
   return (
     <div className="absolute top-1 left-1 bottom-1 w-80 bg-[#02050A] border-r border-[#00FF41]/30 z-30 flex flex-col font-mono text-sm overflow-y-auto shadow-[4px_0_15px_rgba(0,0,0,0.5)] rounded-l-lg">
@@ -43,7 +43,7 @@ function EntityInspector({ node, allNodes, allEdges, onClose }) {
             <h3 className="text-white text-lg font-bold truncate">{node.name || 'Unknown Entity'}</h3>
             <div className="flex gap-2 mt-2 text-[10px] font-bold tracking-wider">
               <span className="text-neonCyan border border-neonCyan/30 px-1 rounded-sm bg-neonCyan/10">{node.type?.toUpperCase() || 'UNKNOWN'}</span>
-              <span className={`px-1 border rounded-sm ${riskColor} ${nodeRisk > 75 ? 'bg-neonRed/10' : nodeRisk > 50 ? 'bg-neonYellow/10' : 'bg-neonGreen/10'}`}>{nodeRisk > 75 ? 'CRITICAL RISK' : nodeRisk > 50 ? 'MEDIUM RISK' : 'LOW RISK'}</span>
+              <span className={`px-1 border rounded-sm ${riskColor} ${nodeRisk >= 90 ? 'bg-neonRed/10' : nodeRisk >= 80 ? 'bg-neonYellow/10' : 'bg-neonGreen/10'}`}>{nodeRisk >= 90 ? 'CRITICAL RISK' : nodeRisk >= 80 ? 'MEDIUM RISK' : 'LOW RISK'}</span>
             </div>
           </div>
         </div>
@@ -71,8 +71,8 @@ function EntityInspector({ node, allNodes, allEdges, onClose }) {
                 <div key={i} className="border border-gray-800 bg-gray-900/30 p-3 rounded hover:border-gray-600 transition-colors cursor-pointer">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-gray-200 font-bold truncate max-w-[150px]">{cn.label || cn.name}</span>
-                    <span className={`text-[10px] font-bold ${cnRisk > 75 ? 'text-neonRed' : cnRisk > 50 ? 'text-neonYellow' : 'text-neonGreen'}`}>
-                      {cnRisk > 75 ? 'CRITICAL' : cnRisk > 50 ? 'HIGH' : 'MEDIUM'}
+                    <span className={`text-[10px] font-bold ${cnRisk >= 90 ? 'text-neonRed' : cnRisk >= 80 ? 'text-neonYellow' : 'text-neonGreen'}`}>
+                      {cnRisk >= 90 ? 'CRITICAL' : cnRisk >= 80 ? 'MEDIUM' : 'LOW'}
                     </span>
                   </div>
                   <div className="text-gray-500 text-[10px] flex items-center gap-1">
@@ -212,7 +212,7 @@ function Dashboard() {
         }
         
         // Calculate some simple stats from the data if stats object from backend is basic
-        const highRiskCount = (data.nodes || []).filter(n => (n.risk_score || 0) > 75).length;
+        const highRiskCount = (data.nodes || []).filter(n => (n.risk_score || 0) >= 90).length;
         setStats({
           total_nodes: data.stats?.total_nodes || (data.nodes || []).length,
           communities: data.stats?.communities || 0,

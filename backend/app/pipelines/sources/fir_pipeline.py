@@ -53,27 +53,37 @@ class FIRPipeline(BasePipeline):
             
         doc = nlp(processed_data)
         
-        # Heuristic extraction for specific attributes globally in the text
-        dob_match = re.search(r'(?:DOB|Date of Birth)\s*[:\-]?\s*([0-9/.-]+|[A-Za-z\s]+)', processed_data, re.IGNORECASE)
-        nationality_match = re.search(r'Nationality\s*[:\-]?\s*([A-Za-z]+)', processed_data, re.IGNORECASE)
-        last_seen_match = re.search(r'Last Seen\s*[:\-]?\s*([0-9A-Za-z\s]+)', processed_data, re.IGNORECASE)
-        
-        dob = dob_match.group(1).strip() if dob_match else None
-        nationality = nationality_match.group(1).strip() if nationality_match else None
-        last_seen = last_seen_match.group(1).strip() if last_seen_match else None
-        
         # Identify profile names and manually add them to overcome spaCy limitations
-        profile_names = [m.strip().lower() for m in re.findall(r'Name\s*:\s*([A-Za-z\s]+?)\s*(?:-|$)', processed_data, re.IGNORECASE)]
+        profile_names = []
+        profile_data = {}
+        
+        blocks = re.split(r'Name\s*:', processed_data, flags=re.IGNORECASE)[1:]
+        for block in blocks:
+            name_match = re.match(r'\s*([A-Za-z\s]+?)\s*(?:-|$|\n)', block)
+            if name_match:
+                p_name = name_match.group(1).strip().lower()
+                profile_names.append(p_name)
+                
+                dob_match = re.search(r'(?:DOB|Date of Birth)\s*[:\-]?\s*([0-9/.-]+)', block, re.IGNORECASE)
+                nat_match = re.search(r'Nationality\s*[:\-]?\s*([A-Za-z]+)', block, re.IGNORECASE)
+                ls_match = re.search(r'Last Seen\s*[:\-]?\s*([0-9A-Za-z\s]+?)(?:\n|-|$)', block, re.IGNORECASE)
+                
+                profile_data[p_name] = {
+                    "dob": dob_match.group(1).strip() if dob_match else None,
+                    "nationality": nat_match.group(1).strip() if nat_match else None,
+                    "last_seen": ls_match.group(1).strip() if ls_match else None
+                }
         
         for p_name in profile_names:
+            p_data = profile_data.get(p_name, {})
             entities.append({
                 "entity_id": f"TEMP_{uuid.uuid4().hex[:8]}",
                 "type": "PERSON",
                 "name": p_name.title(),
                 "normalized_name": p_name,
-                "dob": dob,
-                "nationality": nationality,
-                "last_seen": last_seen,
+                "dob": p_data.get("dob"),
+                "nationality": p_data.get("nationality"),
+                "last_seen": p_data.get("last_seen"),
                 "sources": [{
                     "source_id": self.upload_id,
                     "source_type": "fir",
