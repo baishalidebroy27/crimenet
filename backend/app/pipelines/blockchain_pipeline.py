@@ -31,20 +31,18 @@ class BlockchainPipeline(BasePipeline):
     async def process(self, file_hash: str):
         logger.info(f"Attempting blockchain transaction for hash: {file_hash}")
         
-        # Load Web3 config
-        import os
-        rpc_url = os.environ.get("WEB3_RPC_URL", "").strip()
-        private_key = os.environ.get("WEB3_PRIVATE_KEY", "").strip()
+        from app.config import settings
+        
+        rpc_url = settings.web3_rpc_url.strip() if settings.web3_rpc_url else ""
+        private_key = settings.web3_private_key.strip() if settings.web3_private_key else ""
         
         tx_id = None
         
         if rpc_url and private_key:
             try:
                 from web3 import Web3
-                from web3.middleware import geth_poa_middleware
                 
                 w3 = Web3(Web3.HTTPProvider(rpc_url))
-                w3.middleware_onion.inject(geth_poa_middleware, layer=0)
                 
                 if w3.is_connected():
                     account = w3.eth.account.from_key(private_key)

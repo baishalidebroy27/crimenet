@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     cors_origins: str
     
     log_level: str = "INFO"
+    
+    web3_rpc_url: str = ""
+    web3_private_key: str = ""
 
     class Config:
         env_file = ".env"

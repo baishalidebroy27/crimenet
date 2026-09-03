@@ -205,15 +205,25 @@ export default function Search() {
                            <ShieldCheck size={16} weight="fill" className="text-indiaGreen shrink-0 mt-0.5" />
                            <div className="min-w-0">
                               <p className="text-[10px] font-bold text-indiaGreen uppercase tracking-wider">Blockchain Verified</p>
-                              <a 
-                                href={`https://sepolia.etherscan.io/tx/${upload.blockchain_tx_id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[10px] text-blue-500 hover:text-blue-700 font-mono truncate block transition-colors"
-                                title="Verify on Etherscan"
-                              >
-                                Tx: {upload.blockchain_tx_id}
-                              </a>
+                              <div className="flex items-center gap-2 mt-1">
+                                <a 
+                                  href={`https://sepolia.etherscan.io/tx/${upload.blockchain_tx_id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-blue-500 hover:text-blue-700 font-mono truncate block transition-colors max-w-[150px] md:max-w-[200px]"
+                                  title="View Transaction on Etherscan"
+                                >
+                                  Tx: {upload.blockchain_tx_id}
+                                </a>
+                                <a 
+                                  href={`https://sepolia.etherscan.io/tx/${upload.blockchain_tx_id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2 py-1 bg-indiaGreen text-white rounded text-[10px] font-bold shadow-sm hover:bg-green-700 hover:shadow transition-all shrink-0"
+                                >
+                                  Verify Hash
+                                </a>
+                              </div>
                            </div>
                          </div>
                        )}
