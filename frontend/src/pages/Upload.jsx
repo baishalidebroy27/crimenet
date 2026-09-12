@@ -91,7 +91,7 @@ export default function Upload() {
     } catch (err) {
       console.error(err);
       setStatus('error');
-      setErrorMsg('Failed to trigger data processing.');
+      setErrorMsg(err.response?.data?.detail || 'Failed to trigger data processing.');
     }
   }
 
