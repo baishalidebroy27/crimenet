@@ -65,7 +65,7 @@ class FIRPipeline(BasePipeline):
         # 2. Gemini for complex entities (PERSON, ORG, LOCATION)
         if os.getenv("GEMINI_API_KEY"):
             try:
-                model = genai.GenerativeModel("gemini-1.5-flash")
+                model = genai.GenerativeModel("gemini-flash-latest")
                 prompt = f"""
                 Extract named entities from the following FIR text. 
                 Identify ONLY people (PERSON), organizations (ORG), and locations/cities (LOCATION).
