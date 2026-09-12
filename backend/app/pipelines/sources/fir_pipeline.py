@@ -70,8 +70,9 @@ class FIRPipeline(BasePipeline):
                 Extract named entities from the following FIR text. 
                 Identify ONLY people (PERSON), organizations (ORG), and locations/cities (LOCATION).
                 Do not include generic words, verbs, or dates.
+                For PERSON entities, also extract their Date of Birth (dob), nationality, and where they were last seen (last_seen) if available in the text.
                 Return ONLY a raw JSON array of objects (no markdown, no backticks).
-                Format: [{{"type": "PERSON", "name": "John Doe"}}, {{"type": "LOCATION", "name": "Mumbai"}}]
+                Format: [{{"type": "PERSON", "name": "John Doe", "dob": "1990-01-01", "nationality": "Indian", "last_seen": "Delhi"}}, {{"type": "LOCATION", "name": "Mumbai"}}]
                 
                 Text:
                 {processed_data[:3000]}
@@ -97,7 +98,7 @@ class FIRPipeline(BasePipeline):
                         if e_name.lower() in ["sharma", "hla", "singh", "amit", "vikram", "patel", "rohit"]:
                             continue
                             
-                        entities.append({
+                        entity_doc = {
                             "entity_id": f"TEMP_{uuid.uuid4().hex[:8]}",
                             "type": e_type,
                             "name": e_name.title() if e_type == "PERSON" else e_name,
@@ -109,7 +110,14 @@ class FIRPipeline(BasePipeline):
                                 "extracted_text": e_name,
                                 "extracted_at": datetime.utcnow()
                             }]
-                        })
+                        }
+                        
+                        if e_type == "PERSON":
+                            if ent.get("dob"): entity_doc["dob"] = ent["dob"]
+                            if ent.get("nationality"): entity_doc["nationality"] = ent["nationality"]
+                            if ent.get("last_seen"): entity_doc["last_seen"] = ent["last_seen"]
+                            
+                        entities.append(entity_doc)
             except Exception as e:
                 logger.error(f"Gemini API error: {e}")
                 

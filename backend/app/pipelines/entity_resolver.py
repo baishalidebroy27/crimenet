@@ -45,6 +45,10 @@ class EntityResolver:
                     master_entity["sources"].extend(p2.get("sources", []))
                     master_entity["merged_from"].append(p2["entity_id"])
                     
+                    if p2.get("dob") and not master_entity.get("dob"): master_entity["dob"] = p2["dob"]
+                    if p2.get("nationality") and not master_entity.get("nationality"): master_entity["nationality"] = p2["nationality"]
+                    if p2.get("last_seen") and not master_entity.get("last_seen"): master_entity["last_seen"] = p2["last_seen"]
+                    
                     p2["resolution_status"] = "merged"
                     p2["merged_into"] = master_entity["entity_id"]
                     
