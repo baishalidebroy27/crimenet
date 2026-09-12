@@ -13,8 +13,13 @@ class Neo4jClient:
         import time
         for attempt in range(retries):
             try:
+                uri = settings.neo4j_uri
+                if uri.startswith("neo4j+s://"):
+                    # Use neo4j+ssc to bypass strict SSL verification which fails on some Render environments
+                    uri = uri.replace("neo4j+s://", "neo4j+ssc://")
+                    
                 self._driver = GraphDatabase.driver(
-                    settings.neo4j_uri,
+                    uri,
                     auth=(settings.neo4j_user, settings.neo4j_password)
                 )
                 # Verify connection
