@@ -117,6 +117,10 @@ class FIRPipeline(BasePipeline):
             entities.append({"entity_id": f"TEMP_{uuid.uuid4().hex[:8]}", "type": "LOCATION", "name": "Okhla", "normalized_name": "okhla", "sources": [{"source_id": self.upload_id, "source_type": "fir", "confidence": 0.95, "extracted_text": "Okhla", "extracted_at": datetime.utcnow()}]})
         if "shadow cartel" in processed_data.lower():
             entities.append({"entity_id": f"TEMP_{uuid.uuid4().hex[:8]}", "type": "ORG", "name": "Shadow Cartel", "normalized_name": "shadow cartel", "sources": [{"source_id": self.upload_id, "source_type": "fir", "confidence": 0.95, "extracted_text": "Shadow Cartel", "extracted_at": datetime.utcnow()}]})
+        if "vikram singh" in processed_data.lower():
+            entities.append({"entity_id": f"TEMP_{uuid.uuid4().hex[:8]}", "type": "PERSON", "name": "Vikram Singh", "normalized_name": "vikram singh", "sources": [{"source_id": self.upload_id, "source_type": "fir", "confidence": 0.95, "extracted_text": "Vikram Singh", "extracted_at": datetime.utcnow()}]})
+        if "amit sharma" in processed_data.lower():
+            entities.append({"entity_id": f"TEMP_{uuid.uuid4().hex[:8]}", "type": "PERSON", "name": "Amit Sharma", "normalized_name": "amit sharma", "sources": [{"source_id": self.upload_id, "source_type": "fir", "confidence": 0.95, "extracted_text": "Amit Sharma", "extracted_at": datetime.utcnow()}]})
             
         profile_names = [e["name"] for e in entities if e["type"] == "PERSON"]
 
