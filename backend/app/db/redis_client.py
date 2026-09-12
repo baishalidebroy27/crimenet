@@ -10,7 +10,8 @@ class RedisClient:
 
     async def connect(self):
         try:
-            self.redis = redis.from_url(settings.redis_url, decode_responses=True)
+            ssl_kwargs = {"ssl_cert_reqs": "none"} if settings.redis_url.startswith("rediss://") else {}
+            self.redis = redis.from_url(settings.redis_url, decode_responses=True, **ssl_kwargs)
             # Verify connection
             await self.redis.ping()
             logger.info("Connected to Redis successfully")

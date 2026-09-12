@@ -1,6 +1,7 @@
 from celery import Celery
 import os
 import sys
+import ssl
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from app.config import settings
@@ -17,6 +18,8 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="Asia/Kolkata",
     enable_utc=True,
+    broker_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE} if settings.redis_url.startswith("rediss://") else None,
+    redis_backend_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE} if settings.redis_url.startswith("rediss://") else None,
 )
 
 @celery_app.task(name="process_upload")
