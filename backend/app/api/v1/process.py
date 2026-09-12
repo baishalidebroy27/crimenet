@@ -12,7 +12,7 @@ async def process_uploads(request: ProcessRequest):
     # Trigger the background celery task and wait for it to complete
     task = process_upload_task.delay(request.upload_ids, request.options.dict())
     try:
-        task.get(timeout=30)
+        task.get(timeout=60)
     except Exception as e:
         from fastapi import HTTPException
         raise HTTPException(status_code=500, detail=str(e))

@@ -80,11 +80,12 @@ class FIRPipeline(BasePipeline):
                 
                 # Clean up response if it has markdown formatting
                 json_str = response.text.strip()
-                if json_str.startswith("```json"):
-                    json_str = json_str[7:-3]
-                elif json_str.startswith("```"):
-                    json_str = json_str[3:-3]
+                if "```json" in json_str:
+                    json_str = json_str.split("```json")[1].split("```")[0]
+                elif "```" in json_str:
+                    json_str = json_str.split("```")[1]
                     
+                import json
                 gemini_entities = json.loads(json_str.strip())
                 
                 for ent in gemini_entities:
