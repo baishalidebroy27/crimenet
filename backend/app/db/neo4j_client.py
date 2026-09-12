@@ -9,18 +9,25 @@ class Neo4jClient:
     def __init__(self):
         self._driver = None
 
-    def connect(self):
-        try:
-            self._driver = GraphDatabase.driver(
-                settings.neo4j_uri,
-                auth=(settings.neo4j_user, settings.neo4j_password)
-            )
-            # Verify connection
-            self._driver.verify_connectivity()
-            logger.info("Connected to Neo4j successfully")
-        except Exception as e:
-            logger.error(f"Failed to connect to Neo4j: {e}")
-            raise
+    def connect(self, retries=5, delay=5):
+        import time
+        for attempt in range(retries):
+            try:
+                self._driver = GraphDatabase.driver(
+                    settings.neo4j_uri,
+                    auth=(settings.neo4j_user, settings.neo4j_password)
+                )
+                # Verify connection
+                self._driver.verify_connectivity()
+                logger.info("Connected to Neo4j successfully")
+                return
+            except Exception as e:
+                logger.warning(f"Failed to connect to Neo4j (Attempt {attempt + 1}/{retries}): {e}")
+                if attempt < retries - 1:
+                    time.sleep(delay)
+                else:
+                    logger.error("All attempts to connect to Neo4j failed.")
+                    raise
 
     def close(self):
         if self._driver is not None:
