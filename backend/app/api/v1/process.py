@@ -14,7 +14,8 @@ async def process_uploads(request: ProcessRequest):
     try:
         task.get(timeout=30)
     except Exception as e:
-        return {"success": False, "message": str(e), "data": None}
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=str(e))
     
     return {
         "success": True, 

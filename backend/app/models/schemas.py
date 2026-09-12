@@ -55,7 +55,7 @@ class ProcessResponseData(BaseModel):
     message: str
 
 class ProcessResponse(BaseResponse):
-    data: ProcessResponseData
+    data: Optional[ProcessResponseData] = None
 
 class ProcessStatusResponse(BaseModel):
     task_id: str
