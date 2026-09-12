@@ -9,4 +9,5 @@ RUN python -m spacy download en_core_web_lg
 
 COPY . .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run both celery worker and uvicorn in the same container for Render free tier
+CMD celery -A app.tasks.celery_tasks.celery_app worker --loglevel=info & uvicorn app.main:app --host 0.0.0.0 --port 8000
