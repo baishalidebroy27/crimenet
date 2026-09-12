@@ -10,7 +10,7 @@ python-dotenv
 httpx
 pytest
 pytest-asyncio
-spacy
+google-generativeai
 scikit-learn
 fuzzywuzzy
 python-Levenshtein
