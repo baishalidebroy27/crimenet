@@ -1,26 +1,24 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from app.models.schemas import ProcessRequest, ProcessResponse, ProcessStatusResponse
-from app.tasks.celery_tasks import process_upload_task
+from app.pipelines.runner import run_pipelines
+import uuid
 
 router = APIRouter()
 
 @router.post("/process", response_model=ProcessResponse, status_code=202)
-async def process_uploads(request: ProcessRequest):
+async def process_uploads(request: ProcessRequest, background_tasks: BackgroundTasks):
     if not request.upload_ids:
         return {"success": False, "message": "No upload IDs provided", "data": None}
         
-    # Trigger the background celery task and wait for it to complete
-    task = process_upload_task.delay(request.upload_ids, request.options.dict())
-    try:
-        task.get(timeout=60)
-    except Exception as e:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=500, detail=str(e))
+    task_id = str(uuid.uuid4())
+    
+    # Run pipelines directly in the background to save memory and avoid Celery overhead
+    background_tasks.add_task(run_pipelines, request.upload_ids)
     
     return {
         "success": True, 
         "data": {
-            "task_id": str(task.id), 
+            "task_id": task_id, 
             "status": "processing", 
             "estimated_duration_seconds": 45, 
             "message": "Started"
