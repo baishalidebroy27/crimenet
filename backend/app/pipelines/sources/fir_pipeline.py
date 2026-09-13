@@ -8,12 +8,13 @@ from datetime import datetime
 
 from app.pipelines.base import BasePipeline
 from app.db.mongodb_client import mongodb_client
+from app.config import settings
 
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
+genai.configure(api_key=settings.gemini_api_key)
 
 class FIRPipeline(BasePipeline):
     def __init__(self, upload_id: str):
@@ -63,7 +64,7 @@ class FIRPipeline(BasePipeline):
             })
             
         # 2. Gemini for complex entities (PERSON, ORG, LOCATION)
-        if os.getenv("GEMINI_API_KEY"):
+        if settings.gemini_api_key:
             try:
                 model = genai.GenerativeModel("gemini-flash-latest")
                 prompt = f"""
