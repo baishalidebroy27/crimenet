@@ -89,7 +89,7 @@ async def get_uploads():
         
     return {"success": True, "data": uploads}
 
-@router.delete("/upload/{upload_id}", status_code=204)
+@router.delete("/upload/{upload_id}", status_code=200)
 async def delete_upload(upload_id: str):
     if mongodb_client.db is not None:
         # Delete from uploads
