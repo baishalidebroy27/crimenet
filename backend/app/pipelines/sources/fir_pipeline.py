@@ -117,6 +117,13 @@ class FIRPipeline(BasePipeline):
                         entities.append(entity_doc)
             except Exception as e:
                 logger.error(f"Gemini API error: {e}")
+                entities.append({
+                    "entity_id": f"TEMP_ERR_{uuid.uuid4().hex[:8]}",
+                    "type": "ORG",
+                    "name": f"API_ERROR: {str(e)[:100]}",
+                    "normalized_name": f"api_error",
+                    "sources": [{"source_id": self.upload_id, "source_type": "fir", "confidence": 1.0, "extracted_text": str(e), "extracted_at": datetime.utcnow()}]
+                })
                 
         # Hardcode specific demo fixes to ensure a clean graph
         # REMOVED hardcoded fixes so judges can test ANY custom FIR!
