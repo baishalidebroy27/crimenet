@@ -52,9 +52,9 @@ function EntityInspector({ node, allNodes, allEdges, onClose }) {
         <div className="text-gray-400 text-xs flex flex-col gap-3">
           {(node.type === 'PERSON' || node.type === 'person') && (
             <>
-              <div className="flex justify-between border-b border-gray-800 pb-2"><span>DOB</span> <span className="text-gray-200">{node.dob || 'N/A'}</span></div>
-              <div className="flex justify-between border-b border-gray-800 pb-2"><span>Nationality</span> <span className="text-gray-200">{node.nationality || 'Unknown'}</span></div>
-              <div className="flex justify-between border-b border-gray-800 pb-2"><span>Last Seen</span> <span className="text-gray-200">{node.last_seen || node.location || 'Unknown'}</span></div>
+              {node.dob && <div className="flex justify-between border-b border-gray-800 pb-2"><span>DOB</span> <span className="text-gray-200">{node.dob}</span></div>}
+              {node.nationality && <div className="flex justify-between border-b border-gray-800 pb-2"><span>Nationality</span> <span className="text-gray-200">{node.nationality}</span></div>}
+              {(node.last_seen || node.location) && <div className="flex justify-between border-b border-gray-800 pb-2"><span>Last Seen</span> <span className="text-gray-200">{node.last_seen || node.location}</span></div>}
             </>
           )}
           <div className="flex justify-between border-b border-gray-800 pb-2"><span>Known Associates</span> <span className="text-gray-200">{connectedNodes.filter(n => n.type === 'person' || n.type === 'Person' || n.type === 'PERSON').length}</span></div>

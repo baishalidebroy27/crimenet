@@ -94,10 +94,6 @@ class FIRPipeline(BasePipeline):
                     e_name = ent.get("name", "")
                     
                     if e_type in ["PERSON", "ORG", "LOCATION"] and e_name and len(e_name) > 2:
-                        # Skip dummy or bad matches
-                        if e_name.lower() in ["sharma", "hla", "singh", "amit", "vikram", "patel", "rohit"]:
-                            continue
-                            
                         entity_doc = {
                             "entity_id": f"TEMP_{uuid.uuid4().hex[:8]}",
                             "type": e_type,

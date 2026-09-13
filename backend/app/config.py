@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     
     web3_rpc_url: str = ""
     web3_private_key: str = ""
+    gemini_api_key: str = ""
 
     class Config:
         env_file = ".env"
