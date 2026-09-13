@@ -78,17 +78,16 @@ class FIRPipeline(BasePipeline):
                 Text:
                 {processed_data[:3000]}
                 """
-                response = model.generate_content(prompt)
-                
-                # Clean up response if it has markdown formatting
-                json_str = response.text.strip()
-                if "```json" in json_str:
-                    json_str = json_str.split("```json")[1].split("```")[0]
-                elif "```" in json_str:
-                    json_str = json_str.split("```")[1]
-                    
                 import json
-                gemini_entities = json.loads(json_str.strip())
+                response = model.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        response_mime_type="application/json",
+                    )
+                )
+                
+                json_str = response.text.strip()
+                gemini_entities = json.loads(json_str)
                 
                 for ent in gemini_entities:
                     e_type = ent.get("type", "UNKNOWN")
