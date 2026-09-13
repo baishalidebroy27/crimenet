@@ -11,6 +11,12 @@ class BlockchainPipeline(BasePipeline):
     def __init__(self, upload_id: str):
         super().__init__(upload_id)
         
+    async def run(self, file_path: str):
+        raw_data = await self.extract(file_path)
+        processed_data = await self.process(raw_data)
+        await self.store(processed_data)
+        return processed_data
+
     async def extract(self, file_path: str):
         logger.info(f"Computing hash for file: {file_path}")
         sha256_hash = hashlib.sha256()
