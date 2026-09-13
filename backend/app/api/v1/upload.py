@@ -1,14 +1,25 @@
 import os
 import uuid
 import aiofiles
+import logging
 from datetime import datetime
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
 from app.models.schemas import UploadResponse
 from app.config import settings
 from app.db.mongodb_client import mongodb_client
 from app.db.neo4j_client import neo4j_client
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
+
+async def run_blockchain_verification(upload_id: str, file_path: str):
+    try:
+        from app.pipelines.blockchain_pipeline import BlockchainPipeline
+        blockchain = BlockchainPipeline(upload_id)
+        await blockchain.run(file_path)
+    except Exception as e:
+        logger.error(f"Background blockchain verification failed for {upload_id}: {e}")
+
 
 async def save_upload_file(upload_file: UploadFile, prefix: str, extension: str) -> str:
     upload_id = f"{prefix}_{uuid.uuid4().hex[:8]}"
@@ -24,7 +35,11 @@ async def save_upload_file(upload_file: UploadFile, prefix: str, extension: str)
         raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
 
 @router.post("/upload/fir", response_model=UploadResponse, status_code=201)
-async def upload_fir(file: UploadFile = File(...), case_number: str = Form(None)):
+async def upload_fir(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...), 
+    case_number: str = Form(None)
+):
     # Assuming FIR is PDF or TXT
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ['.pdf', '.txt', '.docx']:
@@ -45,13 +60,19 @@ async def upload_fir(file: UploadFile = File(...), case_number: str = Form(None)
     if mongodb_client.db is not None:
         await mongodb_client.db.uploads.insert_one(metadata.copy())
     
+    file_path = os.path.join(settings.upload_dir, f"{upload_id}{ext}")
+    background_tasks.add_task(run_blockchain_verification, upload_id, file_path)
+    
     return {
         "success": True, 
         "data": metadata
     }
 
 @router.post("/upload/cdr", response_model=UploadResponse, status_code=201)
-async def upload_cdr(file: UploadFile = File(...)):
+async def upload_cdr(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...)
+):
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ['.csv', '.xlsx', '.txt']:
         ext = '.csv'
@@ -69,6 +90,9 @@ async def upload_cdr(file: UploadFile = File(...)):
     
     if mongodb_client.db is not None:
         await mongodb_client.db.uploads.insert_one(metadata.copy())
+    
+    file_path = os.path.join(settings.upload_dir, f"{upload_id}{ext}")
+    background_tasks.add_task(run_blockchain_verification, upload_id, file_path)
     
     return {
         "success": True, 

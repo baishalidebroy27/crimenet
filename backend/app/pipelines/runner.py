@@ -32,18 +32,8 @@ async def run_pipelines(upload_ids: list):
                         
                     await pipeline.run(file_path)
                     
-                    # Blockchain Verification
-                    try:
-                        from app.pipelines.blockchain_pipeline import BlockchainPipeline
-                        import asyncio
-                        
-                        blockchain = BlockchainPipeline(upload_id)
-                        # The blockchain code expects synchronous execution inside an async function
-                        # since it calls web3 which is sync. We should wrap it in a thread if it blocks,
-                        # but for now we just call it.
-                        await blockchain.run(file_path)
-                    except Exception as e:
-                        logger.error(f"Blockchain verification error for {upload_id}: {e}")
+                    # Blockchain verification is now handled securely during the upload phase
+                    # to ensure immediate file integrity locking before any processing occurs.
                         
             except Exception as e:
                 logger.error(f"Error processing {upload_id}: {e}")
