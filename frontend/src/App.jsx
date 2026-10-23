@@ -114,7 +114,7 @@ function Header({ setIsAuthenticated }) {
           className="flex items-center gap-1 bg-black/20 hover:bg-black/40 px-3 py-1.5 rounded-md transition-colors"
           title="Secure Logout"
         >
-          <SignOut size={20} />
+          <SignOut size={20} /> 
           <span className="text-sm font-medium hidden md:inline">Disconnect</span>
         </button>
       </div>

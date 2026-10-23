@@ -21,3 +21,4 @@ backend/data/
 *.log
 *.zip
 backend/updated_env.txt
+temp.js

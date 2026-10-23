@@ -13,8 +13,11 @@ logger = logging.getLogger(__name__)
 
 async def setup_neo4j():
     logger.info("Setting up Neo4j constraints and indexes...")
+    uri = settings.neo4j_uri
+    if uri.startswith("neo4j+s://"):
+        uri = uri.replace("neo4j+s://", "neo4j+ssc://")
     driver = AsyncGraphDatabase.driver(
-        settings.neo4j_uri,
+        uri,
         auth=(settings.neo4j_user, settings.neo4j_password)
     )
     
